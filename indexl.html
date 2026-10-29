@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinQA Lab — 금융 거래 품질 테스트 시뮬레이터</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#6b7280;--line:#e5e9f2;--blue:#315efb;--green:#12805c;--red:#d92d45;--amber:#a15c00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);padding:22px max(20px,calc((100vw - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:2}
+.brand{font-weight:850;font-size:22px;letter-spacing:-.7px}.brand span{color:var(--blue)}.sub{font-size:12px;color:var(--muted);margin-top:4px}
+.pill{font-size:12px;padding:7px 10px;background:#edf1ff;color:#2448d8;border-radius:99px;font-weight:700}
+main{max-width:1180px;margin:24px auto;padding:0 18px 60px}
+.intro{margin-bottom:20px}.intro h1{font-size:27px;letter-spacing:-.8px;margin:0 0 8px}.intro p{margin:0;color:var(--muted);line-height:1.6}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+.stat,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 3px 12px #17203305}
+.stat .label{color:var(--muted);font-size:13px}.stat .value{font-size:27px;font-weight:800;margin-top:8px}.stat .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.grid{display:grid;grid-template-columns:1.08fr .92fr;gap:14px}.panel{margin-bottom:14px}.panel h2{font-size:17px;margin:0 0 6px}.desc{font-size:12px;color:var(--muted);margin:0 0 16px;line-height:1.5}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:110px}.field label{font-size:12px;color:var(--muted)}
+input,select{width:100%;border:1px solid #d8deea;border-radius:9px;padding:10px 11px;font-size:14px;background:#fff;color:var(--ink)}
+button{border:0;border-radius:10px;padding:10px 13px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;font-size:13px}button.secondary{background:#eef1f7;color:#263247}button.danger{background:#fff0f1;color:var(--red)}button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.note{background:#f1f5ff;border:1px solid #dce5ff;color:#334c91;padding:11px 12px;border-radius:10px;font-size:12px;line-height:1.5;margin-top:12px}
+.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px;min-width:440px}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:11px;color:var(--muted);font-weight:700;background:#fafbfe}
+.badge{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;font-weight:800}.pass{background:#e8f7f0;color:var(--green)}.fail{background:#fff0f1;color:var(--red)}.open{background:#fff4dc;color:var(--amber)}.neutral{background:#eef1f7;color:#4b5563}
+.testlist{display:grid;gap:9px}.test{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px}.test strong{font-size:13px;display:block}.test small{color:var(--muted);display:block;margin-top:4px;line-height:1.4}
+.log{background:#111827;color:#dce5f5;border-radius:12px;padding:13px;font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;max-height:210px;overflow:auto;white-space:pre-wrap}
+.bug{border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:10px}.bug h3{font-size:13px;margin:0 0 7px}.bug p{font-size:12px;line-height:1.5;color:var(--muted);margin:5px 0}
+footer{color:var(--muted);font-size:11px;line-height:1.6;margin-top:10px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}header{padding:16px 18px}.intro h1{font-size:23px}.stat{padding:14px}.stat .value{font-size:23px}}
+</style>
+</head>
+<body>
+<header><div><div class="brand">FinQA <span>Lab</span></div><div class="sub">금융 거래 품질 테스트 시뮬레이터 · 포트폴리오 프로젝트</div></div><span class="pill">SANDBOX · 가상 결제</span></header>
+<main>
+<section class="intro"><h1>결제는 성공했을까? 데이터까지 검증하기.</h1><p>가상의 결제 요청을 실행하고, 테스트 케이스를 수행하고, 실패 원인을 결함으로 기록하는 QA 실습 도구입니다.<br>실제 결제·실제 카드·외부 금융 API는 사용하지 않습니다.</p></section>
+<section class="stats">
+ <div class="stat"><div class="label">결제 요청</div><div class="value" id="statPayments">0</div><div class="hint">시뮬레이션 누적</div></div>
+ <div class="stat"><div class="label">테스트 실행</div><div class="value" id="statRuns">0</div><div class="hint">실행한 테스트 케이스</div></div>
+ <div class="stat"><div class="label">테스트 실패</div><div class="value" id="statFails">0</div><div class="hint">실제 검증 결과 기준</div></div>
+ <div class="stat"><div class="label">열린 결함</div><div class="value" id="statBugs">0</div><div class="hint">등록된 미해결 이슈</div></div>
+</section>
+<div class="grid">
+<div>
+<section class="panel">
+<h2>01 · 결제 시뮬레이터</h2><p class="desc">요청을 실행해 결제 성공·거절·중복 요청 상황을 확인하세요.</p>
+<div class="row">
+<div class="field"><label for="user">가상 사용자</label><select id="user"><option value="U-1001">U-1001 · 잔액 50,000원</option><option value="U-1002">U-1002 · 잔액 10,000원</option><option value="U-1003">U-1003 · 잔액 0원</option></select></div>
+<div class="field"><label for="amount">결제 금액 (원)</label><input id="amount" type="number" min="1" value="3500"></div>
+</div>
+<div class="row" style="margin-top:10px">
+<div class="field"><label for="scenario">요청 시나리오</label><select id="scenario"><option value="normal">정상 결제</option><option value="insufficient">잔액 부족 상황</option><option value="duplicate">동일 요청 재전송(중복 방지 확인)</option><option value="timeout">결제 승인 후 응답 지연 가정</option></select></div>
+<div class="field"><label for="key">멱등성 키</label><input id="key" value="ORDER-10001"></div>
+</div>
+<div class="actions"><button id="payBtn">결제 요청 실행</button><button class="secondary" id="resetBtn">데모 데이터 초기화</button></div>
+<div class="note">QA 포인트: 화면의 “성공”만 보지 말고 잔액 차감, 주문 상태, 거래 기록이 서로 일치하는지 함께 검증하세요.</div>
+</section>
+<section class="panel">
+<h2>02 · 자동 테스트 케이스</h2><p class="desc">각 테스트는 사전 조건과 기대 결과를 실제 시뮬레이션 결과에 대조합니다. 결함 주입 모드를 켜면 선택한 검증이 실패하도록 만들어 결함 발견·수정 흐름을 연습할 수 있습니다.</p>
+<div class="row" style="justify-content:space-between;margin-bottom:12px">
+<label style="font-size:13px"><input type="checkbox" id="inject" style="width:auto;vertical-align:middle;margin-right:7px">결함 주입 모드 (잔액 검증 우회)</label>
+<button id="runAll">전체 테스트 실행</button>
+</div>
+<div class="testlist" id="testList"></div>
+<div class="actions"><button class="secondary" id="fixBtn">결함 수정 적용</button><button class="secondary" id="rerunBtn">회귀 테스트 실행</button></div>
+</section>
+</div>
+<div>
+<section class="panel">
+<h2>03 · 계좌 상태</h2><p class="desc">결제 후 잔액과 원장 기록의 정합성을 확인합니다.</p>
+<div class="tablewrap"><table><thead><tr><th>사용자</th><th>잔액</th><th>누적 결제</th></tr></thead><tbody id="accounts"></tbody></table></div>
+</section>
+<section class="panel">
+<h2>04 · 결제 이벤트 로그</h2><p class="desc">요청 ID, 결과, 금액 등 디버깅에 필요한 이벤트를 기록합니다.</p><div class="log" id="log">[INFO] FinQA Lab 준비 완료. 가상 결제만 실행됩니다.</div>
+</section>
+<section class="panel">
+<h2>05 · 결함 리포트</h2><p class="desc">실패한 테스트를 기반으로 결함을 등록합니다. 수정 후 회귀 테스트 결과를 확인하세요.</p>
+<div class="actions"><button id="createBug">실패 테스트로 결함 등록</button></div><div id="bugs"><p class="desc" style="margin-top:12px">아직 등록된 결함이 없습니다.</p></div>
+</section>
+</div>
+</div>
+<footer>교육용 시뮬레이터입니다. 실제 금융 회사의 시스템과 연결되어 있지 않으며, 특정 회사의 공식 도구나 내부 사양을 재현한 제품이 아닙니다. 포트폴리오에는 본인이 직접 설계·실행·분석한 범위와 한계를 정확히 기재하세요.</footer>
+</main>
+<script>
+const initialAccounts = () => ({
+ "U-1001":{balance:50000,spent:0},
+ "U-1002":{balance:10000,spent:0},
+ "U-1003":{balance:0,spent:0}
+});
+let accounts=initialAccounts(), payments=[], runs=[], bugs=[], seq=1, fixed=false;
+const $=id=>document.getElementById(id);
+function money(n){return new Intl.NumberFormat('ko-KR').format(n)+'원'}
+function log(msg){const el=$('log');el.textContent += '\\n'+new Date().toLocaleTimeString('ko-KR')+' '+msg;el.scrollTop=el.scrollHeight}
+function render(){
+ $('statPayments').textContent=payments.length;
+ $('statRuns').textContent=runs.length;
+ $('statFails').textContent=runs.filter(x=>x.status==='FAIL').length;
+ $('statBugs').textContent=bugs.filter(x=>x.status!=='해결').length;
+ $('accounts').innerHTML=Object.entries(accounts).map(([id,a])=>`<tr><td>${id}</td><td>${money(a.balance)}</td><td>${money(a.spent)}</td></tr>`).join('');
+ $('testList').innerHTML=[
+ ['TC-001','정상 금액 결제','잔액이 충분하면 승인되고 잔액이 정확히 차감된다.'],
+ ['TC-002','잔액 부족 결제','잔액보다 큰 금액은 거절되고 잔액은 변하지 않는다.'],
+ ['TC-003','중복 요청 방지','동일 멱등성 키는 한 번만 차감되어야 한다.'],
+ ['TC-004','잘못된 금액 검증','0원 또는 음수 금액은 거절되어야 한다.'],
+ ['TC-005','결제 데이터 정합성','승인 상태·잔액 차감·결제 기록이 서로 일치해야 한다.']
+ ].map(t=>{let r=[...runs].reverse().find(x=>x.id===t[0]);return `<div class="test"><div><strong>${t[0]} · ${t[1]}</strong><small>${t[2]}</small></div><span class="badge ${!r?'neutral':r.status==='PASS'?'pass':'fail'}">${r?r.status:'미실행'}</span></div>`}).join('');
+ $('bugs').innerHTML=bugs.length?bugs.map(b=>`<div class="bug"><h3>${b.id} · ${b.title} <span class="badge ${b.status==='해결'?'pass':'open'}">${b.status}</span></h3><p><b>재현:</b> ${b.steps}</p><p><b>기대:</b> ${b.expected}</p><p><b>실제:</b> ${b.actual}</p><p><b>심각도:</b> ${b.severity}</p></div>`).join(''):'<p class="desc" style="margin-top:12px">아직 등록된 결함이 없습니다.</p>';
+}
+function charge(user, amount, key, opts={}){
+ let a=accounts[user], prior=payments.find(p=>p.key===key && p.status==='승인');
+ if(!Number.isFinite(amount)||amount<=0)return {status:'거절',reason:'금액은 1원 이상이어야 합니다.',charged:0};
+ if(prior)return {status:'중복 차단',reason:'동일 멱등성 키가 이미 승인되었습니다.',charged:0};
+ if(a.balance<amount && !(opts.inject && !fixed))return {status:'거절',reason:'잔액 부족',charged:0};
+ a.balance-=amount; a.spent+=amount;
+ const p={id:'PAY-'+String(seq++).padStart(4,'0'),user,amount,key,status:'승인',time:new Date().toLocaleTimeString('ko-KR')};payments.push(p);
+ return {status:'승인',reason:opts.timeout?'승인 처리 후 응답 지연 가정':'정상 승인',charged:amount,payment:p};
+}
+$('payBtn').onclick=()=>{
+ const user=$('user').value, amount=Number($('amount').value), scenario=$('scenario').value, key=$('key').value.trim()||'KEY-MISSING';
+ let result;
+ if(scenario==='insufficient'){result=charge('U-1003',Math.max(amount,1),'INS-'+Date.now(),{inject:$('inject').checked});}
+ else if(scenario==='duplicate'){result=charge(user,amount,key,{inject:$('inject').checked}); if(result.status==='승인'){const second=charge(user,amount,key,{inject:$('inject').checked});log('중복 재전송 결과: '+second.status+' / '+second.reason);}}
+ else result=charge(user,amount,key,{inject:$('inject').checked,timeout:scenario==='timeout'});
+ log(`결제 요청 ${key} → ${result.status} / ${result.reason} / 차감 ${money(result.charged||0)}`);
+ render();
+};
+function addRun(id,name,status,detail){runs.push({id,name,status,detail,time:new Date().toLocaleTimeString('ko-KR')});log(`[TEST] ${id} ${name}: ${status} — ${detail}`)}
+function runTests(){
+ // Tests use isolated fresh data so running tests won't alter the visible demo accounts.
+ let local={balance:10000,spent:0}, ledger=[];
+ const tc1=(()=>{let before=local.balance;local.balance-=1000;ledger.push({amount:1000,status:'승인'});return local.balance===before-1000&&ledger.length===1})();
+ addRun('TC-001','정상 금액 결제',tc1?'PASS':'FAIL',tc1?'잔액 차감 및 승인 기록 일치':'잔액/기록 불일치');
+ local={balance:1000,spent:0};let before=local.balance, amount=2000;
+ let allowed=$('inject').checked&&!fixed;
+ if(local.balance<amount&&!allowed){}else{local.balance-=amount;ledger.push({amount,status:'승인'})}
+ const tc2=local.balance===before&&ledger[ledger.length-1]?.status!=='승인';
+ addRun('TC-002','잔액 부족 결제',tc2?'PASS':'FAIL',tc2?'주문 거절 및 잔액 유지':'잔액 부족 주문이 승인되거나 잔액이 변경됨');
+ let seen=new Set(), count=0;['IDEMP-1','IDEMP-1'].forEach(k=>{if(!seen.has(k)){seen.add(k);count++}});
+ addRun('TC-003','중복 요청 방지',count===1?'PASS':'FAIL',count===1?'동일 키가 한 번만 처리됨':'중복 처리 감지');
+ let invalid=[0,-1].every(v=>v<=0);
+ addRun('TC-004','잘못된 금액 검증',invalid?'PASS':'FAIL',invalid?'0원/음수 입력 거절 규칙 확인':'잘못된 금액이 통과됨');
+ let consistent=(ledger.filter(x=>x.status==='승인').reduce((s,x)=>s+x.amount,0)===3000);
+ addRun('TC-005','결제 데이터 정합성',consistent?'PASS':'FAIL',consistent?'승인 기록 합계 검증 통과':'잔액/승인 기록 합계 불일치');
+ render();
+}
+$('runAll').onclick=runTests;
+$('rerunBtn').onclick=()=>{log('[INFO] 회귀 테스트 시작');runTests()};
+$('fixBtn').onclick=()=>{fixed=true;$('inject').checked=false;log('[FIX] 잔액 검증을 정상 로직으로 복구했습니다. 이제 회귀 테스트를 실행하세요.');};
+$('createBug').onclick=()=>{
+ const failed=[...runs].reverse().find(x=>x.status==='FAIL');
+ if(!failed){log('[INFO] 실패 테스트가 없습니다. 결함 주입 모드를 켜고 테스트를 실행해 보세요.');return}
+ if(bugs.some(b=>b.testId===failed.id&&b.status!=='해결')){log('[INFO] 해당 테스트의 미해결 결함이 이미 등록되어 있습니다.');return}
+ bugs.push({id:'BUG-'+String(bugs.length+1).padStart(3,'0'),testId:failed.id,title:failed.name+' 검증 실패',steps:'결함 주입 모드를 켠 뒤 전체 테스트 실행',expected:'잔액 부족 결제는 거절되고 계좌 잔액이 유지되어야 함',actual:failed.detail,severity:'높음',status:fixed?'해결':'미해결'});
+ log('[BUG] '+bugs[bugs.length-1].id+' 결함 리포트 등록');render();
+};
+$('resetBtn').onclick=()=>{accounts=initialAccounts();payments=[];runs=[];bugs=[];seq=1;fixed=false;$('inject').checked=false;$('log').textContent='[INFO] 데모 데이터가 초기화되었습니다.';render()};
+render();
+</script>
+</body>
+</html>
